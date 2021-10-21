@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Database request</title>
+    <style>
+        *{
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        html{
+            padding: 10px;
+            background-color: antiquewhite;
+        }
+        .database-request{
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 20px;
+        }
+        textarea{
+            width: 100%;
+            margin-right: 20px;
+            border: solid 1px black;
+            font-size: 24px;
+            padding: 5px;
+            resize: vertical;
+        }
+        button{
+            padding: 5px 20px;
+            font-size: 24px;
+        }
+        #database-result{
+            background-color: white;
+            white-space: pre;
+            box-sizing: border-box;
+            padding: 10px;
+            width: 100%;
+            min-height: 500px;
+            border: solid 1px black;
+        }
+    </style>
+    <script>
+        function databaseRequest(){
+            let http = new XMLHttpRequest();
+            http.open('POST', '/database-request');
+            http.setRequestHeader('Content-Type', 'application/json')
+            http.onreadystatechange = () => {
+                if (http.readyState != 4) return;
+                let result = JSON.parse(http.responseText);
+                if (result.__error__){
+                    document.getElementById('database-result').innerText = result.__error__;
+                }
+                else{
+                    document.getElementById('database-result').innerText = JSON.stringify(result, null, '    ')
+                }
+            }
+            http.send(JSON.stringify({query: document.getElementById('query').value}));
+        }
+        document.addEventListener('keypress', e => {
+            if (!e.shiftKey && e.code === 'Enter') {
+                e.preventDefault()
+                databaseRequest()
+            }
+        })
+        document.addEventListener('keyup', e => {
+            if (e.code === 'Tab'){
+                let target = document.getElementById('query');
+                target.focus();
+                if (!e.altKey){
+                    target.setRangeText('    ');
+                    target.setSelectionRange(target.selectionStart + 4, target.selectionStart + 4)
+                }
+            }
+        })
+    </script>
+</head>
+<body>
+    <div class='database-request'>
+        <textarea placeholder="Запрос к базе данных" id='query'></textarea>
+        <button onclick="databaseRequest()">Отправить</button>
+    </div>
+    <div id='database-result'>
+    </div>
+</body>
+</html>
