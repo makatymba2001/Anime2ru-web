@@ -27,7 +27,7 @@
     <div id='sections-container'>
         <div class='path'>
             <a href='/forum'>Форум</a>
-            <% sections_data[0].path?.forEach(part => { %>
+            <% sections_data[0]?.path?.forEach(part => { %>
                > <a href='<%= part[1] %>'><%= part[0] %></a> 
             <% }); %>
         </div>
