@@ -19,19 +19,19 @@ app.set('view engine', 'ejs')
 
 app.get(/.css$/, (req, res) => {
   res.setHeader('Content-Type', 'text/css');
-  res.sendFile(__dirname + '/static' + req.url)
+  res.sendFile(__dirname + '/static/styles/' + req.url.split('/').reverse()[0])
 })
 app.get(/.js$/, (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(__dirname + '/static' + req.url)
+  res.sendFile(__dirname + '/static/scripts/' + req.url.split('/').reverse()[0])
 })
 app.get(/.png$/, (req, res) => {
   res.setHeader('Content-Type', 'image/png');
-  res.sendFile(__dirname + '/static' + req.url);
+  res.sendFile(__dirname + '/static/images/' + req.url.split('/').reverse()[0]);
 })
 app.get(/.svg$/, (req, res) => {
   res.setHeader('Content-Type', 'image/svg+xml');
-  res.sendFile(__dirname + '/static' + req.url);
+  res.sendFile(__dirname + '/static/images/' + req.url.split('/').reverse()[0]);
 })
 
 const client = new Client({
@@ -51,6 +51,27 @@ app.get('/forum', (req, res) => {
     if (error) res.sendStatus(500);
     if (data) res.render('pages/forum', {sections_data: data})
   })
+})
+app.get(/\/forum\/section/, (req, res) => {
+  
+  let match = req.url.match(/\/forum\/section\/([0-9]+)(\/|$)/);
+  let callback = (error, data) => {
+    if (error) {
+      if (error === 404){
+        res.redirect(302, '/forum')
+      }
+      else{
+        res.sendStatus(500);
+      }
+    }
+    if (data) res.render('pages/forum', {sections_data: data})
+  }
+  if (!match) {
+    getAllSectionsData(2, callback)
+  }
+  else{
+    getSectionData(match[1], 2, callback)
+  }
 })
 
 app.post('/database-request', (req, res) => {
@@ -93,12 +114,22 @@ app.post('/createSection', (req, res) => {
     }
     imgur.uploadBase64(d, null, Date.now().toString())
     .then(result => {
-      const request_string = `
-  INSERT INTO Sections (parent_id, title, description, image, childrens) VALUES (${parent_id}, $$${request_body.title}$$, ${request_body.description ? `$$${request_body.description}$$` : null}, $$${result.link}$$, '{}') RETURNING *`;
+      let path = `null`;
+      const request_string = () => {return `
+  INSERT INTO Sections (parent_id, title, description, image, path, childrens) VALUES (${parent_id}, $$${request_body.title}$$, ${request_body.description ? `$$${request_body.description}$$` : null}, $$${result.link}$$, ${path}, '{}') RETURNING *`};
       if (parent_id){
-        client.query('SELECT id::boolean FROM Sections WHERE id = ' + parent_id + ' LIMIT 1').then(result => {
+        client.query('SELECT id, title, path FROM Sections WHERE id = ' + parent_id + ' LIMIT 1').then(result => {
           if (result.rows[0]?.id){
-            client.query(request_string, (error, result) => {
+            if (result.rows[0].path === null) {path = `array[array['${result.rows[0].title}', '/forum/section/${result.rows[0].id}']]`}
+            else{
+              let temp = [];
+              result.rows[0].path.forEach(part => {
+                temp.push(`array['${part[0]}', '${part[1]}']`)
+              })
+              path = `array[${temp}, array['${result.rows[0].title}', '/forum/section/${result.rows[0].id}']]`
+            }
+            client.query(request_string(), (error, result) => {
+              console.log(error)
               if (error) res.status(400).send({error: 'Incorrect section data'});
               if (result) {
                 client.query(`UPDATE Sections SET childrens = array_append(childrens, ${result.rows[0].id}) WHERE id = ${parent_id}`)
@@ -113,7 +144,8 @@ app.post('/createSection', (req, res) => {
         
       }
       else if (parent_id === null){
-        client.query(request_string, (error, result) => {
+        client.query(request_string(), (error, result) => {
+          console.log(error)
           if (error) res.status(400).send({error: 'Incorrect section data'});
           if (result) res.status(200).send(result.rows[0]);
         })
@@ -187,7 +219,12 @@ function getAllSectionsDataWithoutChildrens(callback){
 
 function getSectionData(id, iterations_count = 2, callback){
   client.query(`SELECT * FROM Sections WHERE id = ${id} LIMIT 1`).then(result => {
-    sectionChildrenIterator(result.rows, iterations_count, callback)
+    if (!result.rows.length){
+      callback(404, null)
+    }
+    else{
+      sectionChildrenIterator(result.rows, iterations_count, callback)
+    }
   })
 }
 

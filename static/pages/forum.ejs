@@ -25,25 +25,34 @@
         </div>
     </div>
     <div id='sections-container'>
+        <div class='path'>
+            <a href='/forum'>Форум</a>
+            <% sections_data[0].path?.forEach(part => { %>
+               > <a href='<%= part[1] %>'><%= part[0] %></a> 
+            <% }); %>
+        </div>
         <% sections_data.forEach(section_group => { %>
             <div class='section-group'>
-                <%= section_group.title %>
+                <div>
+                    <img src="<%= section_group.image %>">
+                </div>
+                <a href='/forum/section/<%= section_group.id %>'><%= section_group.title %></a>
                 <button class='delete-button' onclick="deleteSection(<%= section_group.id %>)">удалить</button>
             </div>
             <% section_group.childrens.forEach(section => { %>
             <div class='section-item'>
                 <div>
-                    <div class='section-item-left'>
+                    <a href='/forum/section/<%= section.id %>' class='section-item-left'>
                         <img src="<%= section.image %>">
                         <%= section.title %>
-                    </div>
+                    </a>
                     <div class='section-item-right'>
                         <button class='delete-button' onclick="deleteSection(<%= section.id %>)">удалить</button>
                     </div>
                 </div>
                 <ul>
                     <% section.childrens.forEach(children => { %>
-                        <li><%= children.title %> <button class='delete-button' onclick="deleteSection(<%= children.id %>)">удалить</button></li>
+                        <li><a href='/forum/section/<%= children.id %>'><%= children.title %></a><button class='delete-button' onclick="deleteSection(<%= children.id %>)">удалить</button></li>
                     <% }); %>
                     <li><button class='create-button' onclick="showCreateSectionPanel(<%= section.id %>)">создать</button></li>
                 </ul>
@@ -59,9 +68,11 @@
                 </div>
             </div>
         <% }); %>
+        <% if (!sections_data[0]?.id){ %>
         <div class='section-group'>
             <button class='create-button' onclick='showCreateSectionPanel(0)'>Создать глобальный раздел</button>
         </div>
+        <% }%>
     </div>
 </body>
 </html>
