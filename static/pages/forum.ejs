@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Forum | Anime2.ru</title>
+    <link rel="stylesheet" href="../styles/forum.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <script src="../scripts/forum.js"></script>
+</head>
+<body>
+    <div id='section-creator-background'>
+        <div class='panel'>
+            <h1>Создать раздел</h1>
+            <button onclick="hideCreateSectionPanel()" class='close-button create-button'>Закрыть</button>
+            <p>Название раздела</p>
+            <input type="text" id="creator-section-title" placeholder="Название">
+            <p>Описание раздела</p>
+            <textarea id="creator-section-description" placeholder='Кратко о содержании раздела'></textarea>
+            <p>Изображение раздела</p>
+            <input type="file" accept="image/*" id="creator-section-image-file">
+            или...
+            <input type="text" id="creator-section-image-link" placeholder="Ссылка на изображение">
+            <input type="number" id="creator-section-parent-id" min=0 style='display: none'>
+            <button onclick='createSection()' class='submit-button'> Отправить</button>
+        </div>
+    </div>
+    <div id='sections-container'>
+        <% sections_data.forEach(section_group => { %>
+            <div class='section-group'>
+                <%= section_group.title %>
+                <button class='delete-button' onclick="deleteSection(<%= section_group.id %>)">удалить</button>
+            </div>
+            <% section_group.childrens.forEach(section => { %>
+            <div class='section-item'>
+                <div>
+                    <div class='section-item-left'>
+                        <img src="<%= section.image %>">
+                        <%= section.title %>
+                    </div>
+                    <div class='section-item-right'>
+                        <button class='delete-button' onclick="deleteSection(<%= section.id %>)">удалить</button>
+                    </div>
+                </div>
+                <ul>
+                    <% section.childrens.forEach(children => { %>
+                        <li><%= children.title %> <button class='delete-button' onclick="deleteSection(<%= children.id %>)">удалить</button></li>
+                    <% }); %>
+                    <li><button class='create-button' onclick="showCreateSectionPanel(<%= section.id %>)">создать</button></li>
+                </ul>
+            </div>
+            <% }) %>
+            <div class='section-item'>
+                <div>
+                    <div class='section-item-left'>
+                        <button class='create-button' onclick='showCreateSectionPanel(<%= section_group.id %>)'>Создать раздел</button>
+                    </div>
+                    <div class='section-item-right'>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+        <div class='section-group'>
+            <button class='create-button' onclick='showCreateSectionPanel(0)'>Создать глобальный раздел</button>
+        </div>
+    </div>
+</body>
+</html>
